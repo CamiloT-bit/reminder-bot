@@ -215,8 +215,7 @@ async function loadReminders() {
   section.style.display = data.length > 0 ? 'block' : 'none';
   list.innerHTML = data.map(r => {
     const utc = new Date(r.fecha_hora_utc);
-    const co = new Date(utc.getTime() - 5*60*60*1000);
-    const hora = co.toLocaleString('es-CO', {dateStyle:'medium', timeStyle:'short'});
+    const hora = utc.toLocaleString('es-CO', {timeZone:'America/Bogota', dateStyle:'medium', timeStyle:'short'});
     return `<div class="reminder-item">
       <div class="dot" style="background:${r.enviado ? '#ccc' : '#1D9E75'}"></div>
       <div class="reminder-text">

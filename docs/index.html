@@ -162,12 +162,15 @@ Fecha y hora actual en Colombia: ${fechaHoraCO}
 Mañana es: ${mananaCO}
 El usuario dice: "${text}"
 INSTRUCCIONES:
-- Si dice "en X minutos", suma X minutos a la hora actual
-- Si dice "en X horas", suma X horas a la hora actual
-- Si dice una hora exacta, usa esa hora hoy
+- "en 2 minutos" = exactamente ${en2min}
+- "en 5 minutos" = exactamente ${en5min}
+- "en 10 minutos" = exactamente ${en10min}
+- "en 1 hora" = exactamente ${en1hora}
+- Para otros intervalos calcula sumando a: ${fechaHoraCO}
+- Si dice una hora exacta como "8:25am", usa esa hora hoy ${mananaCO.split('T')[0].substring(0,10)}
 - Si dice "mañana", usa la fecha ${mananaCO}
-- fecha_hora_iso debe ser la hora COLOMBIANA del recordatorio en formato YYYY-MM-DDTHH:mm:ss
-Responde SOLO con JSON sin markdown:
+- fecha_hora_iso debe ser en formato YYYY-MM-DDTHH:mm:ss en hora colombiana
+- NUNCA uses "mañana" si el usuario dice "en X minutos" o "en X horas"Responde SOLO con JSON sin markdown:
 Si es recordatorio: {"es_recordatorio":true,"mensaje_recordatorio":"texto","fecha_hora_iso":"YYYY-MM-DDTHH:mm:ss","respuesta_chat":"confirmación con hora exacta"}
 Si NO es recordatorio: {"es_recordatorio":false,"respuesta_chat":"respuesta"}`;
 

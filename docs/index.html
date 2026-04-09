@@ -148,12 +148,10 @@ async function sendMessage() {
   addTyping();
 
   const nowUTC = new Date();
-  const offsetMs = -5 * 60 * 60 * 1000;
-  const nowCO = new Date(nowUTC.getTime() + offsetMs);
-  const pad = n => String(n).padStart(2, '0');
-  const fechaHoraCO = `${nowCO.getUTCFullYear()}-${pad(nowCO.getUTCMonth()+1)}-${pad(nowCO.getUTCDate())} ${pad(nowCO.getUTCHours())}:${pad(nowCO.getUTCMinutes())}`;
-  const manana = new Date(nowCO.getTime() + 86400000);
-  const mananaCO = `${manana.getUTCFullYear()}-${pad(manana.getUTCMonth()+1)}-${pad(manana.getUTCDate())}`;
+  const fechaHoraCO = nowUTC.toLocaleString('sv-SE', {timeZone:'America/Bogota', hour12:false}).replace('T',' ').substring(0,16);
+  const mananaDate = new Date(nowUTC);
+  mananaDate.setDate(mananaDate.getDate() + 1);
+  const mananaCO = mananaDate.toLocaleDateString('sv-SE', {timeZone:'America/Bogota'});
 
   const prompt = `Eres un asistente de recordatorios. Zona horaria: Colombia (UTC-5).
 Fecha y hora actual en Colombia: ${fechaHoraCO}

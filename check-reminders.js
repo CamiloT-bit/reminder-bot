@@ -4,8 +4,9 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
 
 async function main() {
+  console.log('SUPABASE_URL definida:', !!SUPABASE_URL);
+  console.log('Revisando recordatorios...');
   const now = new Date().toISOString();
-  console.log('Revisando recordatorios pendientes...', now);
 
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/reminders?enviado=eq.false&fecha_hora_utc=lte.${now}&select=*`,

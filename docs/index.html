@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bot Recordatorios WhatsApp</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; display: flex; justify-content: center; padding: 2rem 1rem; min-height: 100vh; }
+    .container { width: 100%; max-width: 600px; }
+    .card { background: white; border-radius: 16px; border: 1px solid #e5e5e5; overflow: hidden; margin-bottom: 1rem; }
+    .header { padding: 1rem 1.25rem; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: #E1F5EE; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .header-text .title { font-weight: 600; font-size: 15px; display: block; }
+    .header-text .sub { font-size: 12px; color: #888; display: block; }
+    .config-btn { margin-left: auto; font-size: 13px; padding: 6px 14px; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; background: #f9f9f9; }
+    .config-panel { display: none; padding: 1rem 1.25rem; border-bottom: 1px solid #eee; background: #f9f9f9; }
+    .config-panel label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; margin-top: 8px; }
+    .config-panel input { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; }
+    .info-box { margin-top: 10px; font-size: 12px; background: #e8f4ff; color: #1a6fb3; padding: 8px 12px; border-radius: 8px; line-height: 1.5; }
+    .save-btn { margin-top: 10px; width: 100%; padding: 9px; font-size: 13px; cursor: pointer; border-radius: 8px; border: 1px solid #ddd; background: white; }
+    .chat-messages { height: 320px; overflow-y: auto; padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 12px; }
+    .bot-msg { display: flex; gap: 8px; align-items: flex-start; }
+    .bot-bubble { background: #f3f3f3; border-radius: 0 12px 12px 12px; padding: 10px 14px; font-size: 14px; max-width: 85%; line-height: 1.5; }
+    .user-msg { display: flex; justify-content: flex-end; }
+    .user-bubble { background: #1D9E75; color: white; border-radius: 12px 0 12px 12px; padding: 10px 14px; font-size: 14px; max-width: 85%; }
+    .input-area { padding: 0.75rem 1.25rem; border-top: 1px solid #eee; display: flex; gap: 8px; }
+    .input-area input { flex: 1; padding: 9px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
+    .input-area button { padding: 9px 18px; font-size: 14px; cursor: pointer; border-radius: 8px; border: 1px solid #ddd; background: white; }
+    .reminders-section { display: none; }
+    .reminders-section .label { font-size: 13px; font-weight: 500; color: #666; margin-bottom: 8px; display: block; }
+    .reminder-item { background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .reminder-text { flex: 1; }
+    .reminder-text .msg { font-size: 13px; }
+    .reminder-text .time { font-size: 12px; color: #888; }
+    .del-btn { font-size: 12px; padding: 4px 10px; cursor: pointer; border-radius: 6px; border: 1px solid #ddd; background: #f9f9f9; color: #666; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="header">
+      <div class="avatar">💬</div>
+      <div class="header-text">
+        <span class="title">Bot Recordatorios</span>
+        <span class="sub">powered by Claude AI</span>
+      </div>
+      <button class="config-btn" onclick="toggleConfig()">⚙ Configurar</button>
+    </div>
+    <div class="config-panel" id="config-panel">
+      <label>Tu número de WhatsApp (con código de país)</label>
+      <input type="text" id="phone-input" placeholder="+573001234567" />
+      <label>API Key de CallMeBot</label>
+      <input type="text" id="apikey-input" placeholder="123456" />
+      <label>Groq API Key</label>
+      <input type="text" id="groq-input" placeholder="gsk_..." />
+      <label>Supabase URL</label>
+      <input type="text" id="supabase-url-input" placeholder="https://xxx.supabase.co" />
+      <label>Supabase Anon Key</label>
+      <input type="text" id="supabase-key-input" placeholder="eyJ..." />
+      <div class="info-box">
+        Para CallMeBot: agrega <strong>+34 644 26 65 71</strong> y envíale:<br>
+        <em>I allow callmebot to send me messages</em>
+      </div>
+      <button class="save-btn" onclick="saveConfig()">Guardar configuración</button>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="bot-msg">
+        <div class="avatar" style="width:28px;height:28px;font-size:14px;flex-shrink:0;">🤖</div>
+        <div class="bot-bubble">¡Hola! Soy tu asistente de recordatorios. Dime qué quieres recordar y cuándo:<br><br><em style="color:#666">"Recuérdame mañana a las 8:25am que debo enviarle un correo a Paola"</em></div>
+      </div>
+    </div>
+    <div class="input-area">
+      <input type="text" id="user-message" placeholder="Escribe un recordatorio..." onkeydown="if(event.key==='Enter') sendMessage()" />
+      <button onclick="sendMessage()">Enviar</button>
+    </div>
+  </div>
+  <div class="reminders-section" id="reminders-section">
+    <span class="label">Recordatorios programados</span>
+    <div id="reminders-list"></div>
+  </div>
+</div>
+<script>
+let config = {
+  phone: localStorage.getItem('phone') || '',
+  apikey: localStorage.getItem('apikey') || '',
+  groqKey: localStorage.getItem('groqKey') || '',
+  supabaseUrl: localStorage.getItem('supabaseUrl') || '',
+  supabaseKey: localStorage.getItem('supabaseKey') || ''
+};
+document.getElementById('phone-input').value = config.phone;
+document.getElementById('apikey-input').value = config.apikey;
+document.getElementById('groq-input').value = config.groqKey;
+document.getElementById('supabase-url-input').value = config.supabaseUrl;
+document.getElementById('supabase-key-input').value = config.supabaseKey;
+
+function toggleConfig() {
+  const p = document.getElementById('config-panel');
+  p.style.display = p.style.display === 'block' ? 'none' : 'block';
+}
+
+function saveConfig() {
+  config.phone = document.getElementById('phone-input').value.trim();
+  config.apikey = document.getElementById('apikey-input').value.trim();
+  config.groqKey = document.getElementById('groq-input').value.trim();
+  config.supabaseUrl = document.getElementById('supabase-url-input').value.trim();
+  config.supabaseKey = document.getElementById('supabase-key-input').value.trim();
+  Object.entries(config).forEach(([k,v]) => localStorage.setItem(k, v));
+  document.getElementById('config-panel').style.display = 'none';
+  addBotMessage('✅ Configuración guardada para ' + config.phone);
+  loadReminders();
+}
+
+function addBotMessage(text) {
+  const chat = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'bot-msg';
+  div.innerHTML = `<div class="avatar" style="width:28px;height:28px;font-size:14px;flex-shrink:0;">🤖</div><div class="bot-bubble">${text}</div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addUserMessage(text) {
+  const chat = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'user-msg';
+  div.innerHTML = `<div class="user-bubble">${text}</div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addTyping() {
+  const chat = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.id = 'typing'; div.className = 'bot-msg';
+  div.innerHTML = `<div class="avatar" style="width:28px;height:28px;font-size:14px;flex-shrink:0;">🤖</div><div class="bot-bubble" style="color:#aaa">Escribiendo...</div>`;
+  chat.appendChild(div); chat.scrollTop = chat.scrollHeight;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('user-message');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!config.groqKey) { addBotMessage('⚠️ Configura tu Groq API Key primero.'); return; }
+  input.value = '';
+  addUserMessage(text);
+  addTyping();
+
+  const nowUTC = new Date();
+  const offsetMs = -5 * 60 * 60 * 1000;
+  const nowCO = new Date(nowUTC.getTime() + offsetMs);
+  const pad = n => String(n).padStart(2, '0');
+  const fechaHoraCO = `${nowCO.getUTCFullYear()}-${pad(nowCO.getUTCMonth()+1)}-${pad(nowCO.getUTCDate())} ${pad(nowCO.getUTCHours())}:${pad(nowCO.getUTCMinutes())}`;
+  const manana = new Date(nowCO.getTime() + 86400000);
+  const mananaCO = `${manana.getUTCFullYear()}-${pad(manana.getUTCMonth()+1)}-${pad(manana.getUTCDate())}`;
+
+  const prompt = `Eres un asistente de recordatorios. Zona horaria: Colombia (UTC-5).
+Fecha y hora actual en Colombia: ${fechaHoraCO}
+Mañana es: ${mananaCO}
+El usuario dice: "${text}"
+INSTRUCCIONES:
+- Si dice "en X minutos", suma X minutos a la hora actual
+- Si dice "en X horas", suma X horas a la hora actual
+- Si dice una hora exacta, usa esa hora hoy
+- Si dice "mañana", usa la fecha ${mananaCO}
+- fecha_hora_iso debe ser la hora COLOMBIANA del recordatorio en formato YYYY-MM-DDTHH:mm:ss
+Responde SOLO con JSON sin markdown:
+Si es recordatorio: {"es_recordatorio":true,"mensaje_recordatorio":"texto","fecha_hora_iso":"YYYY-MM-DDTHH:mm:ss","respuesta_chat":"confirmación con hora exacta"}
+Si NO es recordatorio: {"es_recordatorio":false,"respuesta_chat":"respuesta"}`;
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.groqKey}` },
+      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 500, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await res.json();
+    document.getElementById('typing')?.remove();
+    if (!data.choices?.[0]) { addBotMessage('Error al procesar. Intenta de nuevo.'); return; }
+    const raw = (data.choices[0].message.content || '').replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(raw);
+    addBotMessage(parsed.respuesta_chat);
+
+    if (parsed.es_recordatorio && parsed.fecha_hora_iso) {
+      if (!config.phone || !config.apikey || !config.supabaseUrl || !config.supabaseKey) {
+        addBotMessage('⚠️ Completa toda la configuración primero.'); return;
+      }
+      const utcTime = new Date(parsed.fecha_hora_iso + '-05:00').toISOString();
+      await fetch(`${config.supabaseUrl}/rest/v1/reminders`, {
+        method: 'POST',
+        headers: {
+          apikey: config.supabaseKey,
+          Authorization: `Bearer ${config.supabaseKey}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal'
+        },
+        body: JSON.stringify({ mensaje: parsed.mensaje_recordatorio, fecha_hora_utc: utcTime, phone: config.phone, apikey: config.apikey, enviado: false })
+      });
+      loadReminders();
+    }
+  } catch(e) {
+    document.getElementById('typing')?.remove();
+    addBotMessage('Error: ' + e.message);
+  }
+}
+
+async function loadReminders() {
+  if (!config.supabaseUrl || !config.supabaseKey) return;
+  const res = await fetch(`${config.supabaseUrl}/rest/v1/reminders?select=*&order=fecha_hora_utc.asc`, {
+    headers: { apikey: config.supabaseKey, Authorization: `Bearer ${config.supabaseKey}` }
+  });
+  const data = await res.json();
+  const section = document.getElementById('reminders-section');
+  const list = document.getElementById('reminders-list');
+  if (!Array.isArray(data)) return;
+  section.style.display = data.length > 0 ? 'block' : 'none';
+  list.innerHTML = data.map(r => {
+    const utc = new Date(r.fecha_hora_utc);
+    const co = new Date(utc.getTime() - 5*60*60*1000);
+    const hora = co.toLocaleString('es-CO', {dateStyle:'medium', timeStyle:'short'});
+    return `<div class="reminder-item">
+      <div class="dot" style="background:${r.enviado ? '#ccc' : '#1D9E75'}"></div>
+      <div class="reminder-text">
+        <div class="msg">${r.mensaje}</div>
+        <div class="time">${hora}${r.enviado ? ' · enviado ✓' : ''}</div>
+      </div>
+      ${!r.enviado ? `<button class="del-btn" onclick="deleteReminder(${r.id})">Eliminar</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function deleteReminder(id) {
+  await fetch(`${config.supabaseUrl}/rest/v1/reminders?id=eq.${id}`, {
+    method: 'DELETE',
+    headers: { apikey: config.supabaseKey, Authorization: `Bearer ${config.supabaseKey}` }
+  });
+  loadReminders();
+}
+
+setInterval(loadReminders, 30000);
+loadReminders();
+</script>
+</body>
+</html>

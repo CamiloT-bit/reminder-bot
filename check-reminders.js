@@ -4,7 +4,6 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
 
 async function main() {
-  console.log('SUPABASE_URL definida:', !!SUPABASE_URL);
   console.log('Revisando recordatorios...');
   const now = new Date().toISOString();
 
@@ -12,7 +11,15 @@ async function main() {
     `${SUPABASE_URL}/rest/v1/reminders?enviado=eq.false&fecha_hora_utc=lte.${now}&select=*`,
     { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
-  const reminders = await res.json();
+  const text = await res.text();
+  console.log('Status:', res.status);
+  console.log('Respuesta Supabase:', text);
+  
+  const reminders = JSON.parse(text);
+  if (!Array.isArray(reminders)) {
+    console.error('Error: Supabase no devolvió un array');
+    return;
+  }
   console.log(`Encontrados: ${reminders.length}`);
 
   for (const r of reminders) {

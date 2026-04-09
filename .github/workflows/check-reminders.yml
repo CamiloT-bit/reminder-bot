@@ -1,8 +1,9 @@
 name: Check Reminders
+
 on:
   schedule:
-    - cron: '* * * * *'
-  workflow_dispatch:
+    - cron: '*/5 * * * *'   # 👈 opcional, más realista
+  workflow_dispatch         # 👈 clave para el minuto
 
 jobs:
   check:
